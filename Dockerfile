@@ -1,7 +1,7 @@
 FROM python:3.6-alpine
 
 ENV FLASK_APP flasky.py
-ENV FLASK_CONFIG production
+ENV FLASK_CONFIG docker
 
 RUN adduser -D flasky
 USER flasky
@@ -19,3 +19,4 @@ COPY flasky.py config.py boot.sh ./
 # run-time configuration
 EXPOSE 5000
 ENTRYPOINT ["./boot.sh"]
+
