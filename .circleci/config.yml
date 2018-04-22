@@ -16,7 +16,7 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - deps1-{{ .Branch }}-{{ checksum "requirements/docker.txt" }}
+          - deps1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}
            fallback to using the latest cache if no exact match is found
           - deps1-{{ .Branch }}-
 
@@ -24,7 +24,7 @@ jobs:
           name: Install Dependencies
           command: |
             python -m venv venv
-            venv/bin/pip install -r requirements/docker.txt
+            venv/bin/pip install -r requirements/dev.txt
       - run:
           name: Deploy 
           command: |
@@ -34,7 +34,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: deps1-{{ .Branch }}-{{ checksum "requirements/docker.txt" }}
+          key: deps1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}
 
       - run:
           name: Run Tests
@@ -51,4 +51,3 @@ jobs:
 
 
 
-          
