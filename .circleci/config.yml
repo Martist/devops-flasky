@@ -47,7 +47,7 @@ jobs:
           destination: tr1
       - store_test_results:
           path: test-reports/
-build_and_push_image:
+  build_and_push_image:
     working_directory: ~/repo
     environment: 
       DEPLOYMENT_NAME: flasky-deployment
@@ -76,7 +76,7 @@ build_and_push_image:
           command: |
             docker build -t eu.gcr.io/${GOOGLE_PROJECT_ID}/flasky:$CIRCLE_SHA1 .
             docker push eu.gcr.io/${GOOGLE_PROJECT_ID}/flasky:$CIRCLE_SHA1
-deploy_to_gcloud_test:
+  deploy_to_gcloud_test:
     working_directoty: ~/repo
     docker:
       - image: google/cloud-sdk:latest
