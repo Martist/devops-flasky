@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  build_and_test:
     docker:
       - image: circleci/python:3.6.2-stretch-browsers
        
@@ -8,6 +8,9 @@ jobs:
 
     steps:
       - checkout
+      - persist_to_workspace:
+          root: ./
+          paths: ./
       - run: mkdir test-reports
       # Download and cache dependencies
       - restore_cache:
@@ -45,7 +48,69 @@ jobs:
       - store_test_results:
           path: test-reports/
 
+build_and_push_image:
+    working_directory: ~/repo
+    environment: 
+      DEPLOYMENT_NAME: flasky-deployment
+      CONTAINER_NAME: flasky
+    docker:
+      - image: google/cloud-sdk:latest
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true 
+      - attach_workspace:
+          at: ./
+      - run: 
+          name: Store gcloud Service Account
+          command: |
+            echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
+      - run: 
+          name: Configure gcloud
+          command: |
+            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+            gcloud --quiet container clusters get-credentials ${GOOGLE_CLUSTER_NAME}
+            gcloud --quiet auth configure-docker
+      - run: 
+          name: Build and push the Docker Image to gcloud
+          command: |
+            docker build -t eu.gcr.io/${GOOGLE_PROJECT_ID}/flasky:$CIRCLE_SHA1 .
+            docker push eu.gcr.io/${GOOGLE_PROJECT_ID}/flasky:$CIRCLE_SHA1
+            
+  deploy_to_gcloud_test:
+    working_directoty: ~/repo
+    docker:
+      - image: google/cloud-sdk:latest
+    steps:
+      - run: 
+          name: Store gcloud Service Account
+          command: |
+            echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
+      - run: 
+          name: Configure gcloud
+          command: |
+            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+            gcloud --quiet container clusters get-credentials ${GOOGLE_CLUSTER_NAME}
+            gcloud --quiet auth configure-docker
+      - run:
+          name: Update the default image for gcloud Deployment
+          command: |
+            kubectl set image deployment/${DEPLOYMENT_NAME} ${CONTAINER_NAME}=eu.gcr.io/${GOOGLE_PROJECT_ID}/flasky:$CIRCLE_SHA1
+workflows:
+  version: 2
 
+  deploy_to_staging:
+    jobs:
+      - build_and_test
+      - build_docker_image:
+          requires:
+            - build_and_test
+          filters:
+            branches:
+              only: master  
 
 
 
