@@ -47,7 +47,6 @@ jobs:
           destination: tr1
       - store_test_results:
           path: test-reports/
-
 build_and_push_image:
     working_directory: ~/repo
     environment: 
@@ -77,7 +76,6 @@ build_and_push_image:
           command: |
             docker build -t eu.gcr.io/${GOOGLE_PROJECT_ID}/flasky:$CIRCLE_SHA1 .
             docker push eu.gcr.io/${GOOGLE_PROJECT_ID}/flasky:$CIRCLE_SHA1
-            
   deploy_to_gcloud_test:
     working_directoty: ~/repo
     docker:
@@ -99,15 +97,18 @@ build_and_push_image:
           name: Update the default image for gcloud Deployment
           command: |
             kubectl set image deployment/${DEPLOYMENT_NAME} ${CONTAINER_NAME}=eu.gcr.io/${GOOGLE_PROJECT_ID}/flasky:$CIRCLE_SHA1
+
 workflows:
   version: 2
-
-  deploy_to_staging:
+  deploy_to_test:
     jobs:
       - build_and_test
-      - build_docker_image:
+      - build_and_push_image:
           requires:
             - build_and_test
+      - deploy_to_gcloud_text:
+          requires:
+            - build_and_push_image
           filters:
             branches:
               only: master  
