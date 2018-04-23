@@ -106,7 +106,7 @@ workflows:
       - build_and_push_image:
           requires:
             - build_and_test
-      - deploy_to_gcloud_text:
+      - deploy_to_gcloud_test:
           requires:
             - build_and_push_image
           filters:
